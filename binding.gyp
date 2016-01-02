@@ -1,6 +1,8 @@
 {
   'variables': {
     'platform': '<(OS)',
+    'variant': 'default',
+    'bcm_host': '<!(test ! -e /opt/vc/include/bcm_host.h ; echo $?)',
   },
   'conditions': [
     # Replace gyp platform with node platform, blech
@@ -9,6 +11,8 @@
       'ANTTWEAKBAR_ROOT': '/usr/local/Cellar/anttweakbar/1.16',
     }}],
     ['platform == "win"', {'variables': {'platform': 'win32'}}],
+    # Detect Raspberry PI
+    ['platform == "linux" and target_arch=="arm" and bcm_host==1', {'variables': {'variant': 'raspberry'}}],
   ],
   'targets': [
     {
@@ -16,21 +20,32 @@
       'defines': [
         'VERSION=0.4.6',
       ],
-      'sources': [
-        'src/atb.cc',
-        'src/glfw.cc'
-      ],
       'include_dirs': [
         "<!(node -e \"require('nan')\")",
         './deps/include',
       ],
       'conditions': [
-        ['OS=="linux"', {
+        ['variant!="raspberry"', {
+          'sources': [
+            'src/atb.cc',
+            'src/glfw.cc'
+          ],
+        }],
+        ['OS=="linux" and variant=="default"', {
           'libraries': [
             '-lAntTweakBar', '<!@(pkg-config --libs glfw3 glew)',
             '-lXrandr','-lXinerama','-lXxf86vm','-lXcursor','-lXi',
             '-lrt','-lm'
             ]
+        }],
+        ['OS=="linux" and variant=="raspberry"', {
+          'library_dirs': ['/opt/vc/lib/'],
+          'libraries': ['-lbcm_host', '-lEGL'],
+          'include_dirs': ['/opt/vc/include/', '/opt/vc/include/interface/vcos/pthreads', '/opt/vc/include/interface/vmcs_host/linux'],
+          'defines': ['__RASPBERRY__'],
+          'sources': [
+            'src/rpi_shim.cc',
+          ],
         }],
         ['OS=="mac"', {
           'include_dirs': [ '<!@(pkg-config glfw3 glew --cflags-only-I | sed s/-I//g)','-I<(ANTTWEAKBAR_ROOT)/include'],

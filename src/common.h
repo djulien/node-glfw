@@ -7,6 +7,7 @@
 #define COMMON_H_
 
 // OpenGL Graphics Includes
+#ifndef __RASPBERRY__
 #ifndef _WIN32
 #define GLEW_STATIC
 #endif
@@ -15,6 +16,7 @@
 #define GLFW_NO_GLU
 #define GLFW_DLL
 #include <GLFW/glfw3.h>
+#endif
 
 // NodeJS includes
 #include <node.h>
