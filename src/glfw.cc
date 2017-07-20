@@ -17,8 +17,19 @@ namespace glfw {
 
 /* @Module: GLFW initialization, termination and version querying */
 
+char last_err[200] = "";
+
+void error_callback(int error, const char* description)
+{
+//    puts("GLFW ERROR: \0");
+//    puts(description);
+  strncpy(last_err, description, sizeof(last_err));
+  last_err[sizeof(last_err) - 1] = '\0';
+}
+
 NAN_METHOD(Init) {
   Nan::HandleScope scope;
+  glfwSetErrorCallback(error_callback);
   info.GetReturnValue().Set(JS_BOOL(glfwInit()==1));
 }
 
@@ -616,7 +627,11 @@ NAN_METHOD(glfw_CreateWindow) {
 
     if(!window) {
       // can't create window, throw error
-      return Nan::ThrowError("Can't create GLFW window");
+      char buf[260];
+      strcpy(buf, "Can't create GLFW window: ");
+      strcat(buf, last_err); //tell why
+//      return Nan::ThrowError("Can't create GLFW window");
+      return Nan::ThrowError(buf);
     }
 
     glfwMakeContextCurrent(window);
